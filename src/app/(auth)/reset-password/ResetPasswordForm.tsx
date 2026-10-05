@@ -1,63 +1,50 @@
 "use client";
-import { signIn } from "@/lib/auth-client";
+import { useSearchParams } from "next/navigation";
 import { Check, Eye, EyeSlash } from "@gravity-ui/icons";
 import {
   Button,
-  FieldError,
   Form,
-  Input,
   Label,
   TextField,
   InputGroup,
   toast,
 } from "@heroui/react";
-import Link from "next/link";
 import { useState } from "react";
+import { resetPassword } from "@/lib/auth-client";
 
-const SignInPage = () => {
+const ResetPasswordForm = () => {
     const [isVisible, setIsVisible] = useState(false);
+    const searchParams = useSearchParams();
 
-    const handelSignIn = async(e:React.FormEvent<HTMLFormElement>)=>{
+    const token = searchParams.get('token');
+    if(!token){
+        toast.danger("It is not a valid token");
+        return;
+    }
+
+    const handelResetPassword = async(e:React.FormEvent<HTMLFormElement>)=>{
         e.preventDefault();
-
         const formData = new FormData(e.currentTarget);
 
         const userData = Object.fromEntries(formData.entries()) as Record<string, string>;
 
-        const {data:resData, error} = await signIn.email({
-            email: userData.email,
-            password: userData.password,
-            callbackURL: '/'
+        const {data:resData, error} = await resetPassword({
+            newPassword: userData.password,
+            token: token
         });
 
         if(resData){
-            console.log(resData);
-            toast.success("Login Successfully!");
+            toast.success("Password Reset Successfully!");
         }
 
-        if(error){
-            console.log(error);
-            throw new Error(`error is from login page ${error}`);
+        if (error) {
+          console.log(error);
+          throw new Error(`error is from login page ${error}`);
         }
     }
   return (
     <div>
-      <Form className="flex w-96 flex-col gap-4" onSubmit={handelSignIn}>
-        <TextField
-          isRequired
-          name="email"
-          type="email"
-          validate={(value) => {
-            if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
-              return "Please enter a valid email address";
-            }
-            return null;
-          }}
-        >
-          <Label>Email</Label>
-          <Input placeholder="john@example.com" />
-          <FieldError />
-        </TextField>
+      <Form className="flex w-96 flex-col gap-4" onSubmit={handelResetPassword}>
 
         <TextField className="w-full max-w-70" name="password">
           <Label>Password</Label>
@@ -94,17 +81,8 @@ const SignInPage = () => {
           </Button>
         </div>
       </Form>
-
-      <div className="flex items-center gap-3">
-        <p>
-          Forgot your password?{" "}
-          <Link href={"/forgot-password"} className="text-blue-400 underline">
-            click here
-          </Link>
-        </p>
-      </div>
     </div>
   );
 };
 
-export default SignInPage;
+export default ResetPasswordForm;
